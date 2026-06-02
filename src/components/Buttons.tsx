@@ -4,52 +4,47 @@ import {
   Pressable,
   PressableProps,
   StyleSheet,
-  View,
   ViewStyle,
 } from 'react-native';
-import { colors, radius, spacing } from '../theme/tokens';
+import { colors, radius } from '../theme/tokens';
 import { Txt } from './Txt';
+import { Icon, IconName } from './Icon';
 
 /**
  * The system-wide press micro-interaction: transform scale(0.95).
- * Every button shares this gesture — it is the only "animation" in the system.
+ * Every button shares this gesture — the only "animation" the design system uses on controls.
  */
 function usePressScale() {
   const scale = useRef(new Animated.Value(1)).current;
   const to = (v: number) =>
-    Animated.spring(scale, {
-      toValue: v,
-      useNativeDriver: true,
-      speed: 40,
-      bounciness: 0,
-    }).start();
-  return {
-    scale,
-    onPressIn: () => to(0.95),
-    onPressOut: () => to(1),
-  };
+    Animated.spring(scale, { toValue: v, useNativeDriver: true, speed: 40, bounciness: 0 }).start();
+  return { scale, onPressIn: () => to(0.95), onPressOut: () => to(1) };
 }
 
 type BtnProps = Omit<PressableProps, 'style'> & {
   label: string;
   onPress?: () => void;
   style?: ViewStyle;
+  /** Larger hero sizing (the rare weight-300 label at 18px). */
+  large?: boolean;
+  disabled?: boolean;
 };
 
-/** button-primary — the signature Apple action: Action Blue, full pill. */
-export function PrimaryButton({ label, onPress, style, ...rest }: BtnProps) {
+/** button-primary — the signature action: Action Blue, full pill. */
+export function PrimaryButton({ label, onPress, style, large, disabled, ...rest }: BtnProps) {
   const { scale, onPressIn, onPressOut } = usePressScale();
   return (
-    <Animated.View style={{ transform: [{ scale }] }}>
+    <Animated.View style={{ transform: [{ scale }], opacity: disabled ? 0.4 : 1 }}>
       <Pressable
         accessibilityRole="button"
+        disabled={disabled}
         onPress={onPress}
         onPressIn={onPressIn}
         onPressOut={onPressOut}
-        style={[styles.primary, style]}
+        style={[styles.primary, large && styles.primaryLarge, style]}
         {...rest}
       >
-        <Txt token="body" color={colors.canvas}>
+        <Txt token={large ? 'buttonLarge' : 'body'} color={colors.canvas}>
           {label}
         </Txt>
       </Pressable>
@@ -57,8 +52,14 @@ export function PrimaryButton({ label, onPress, style, ...rest }: BtnProps) {
   );
 }
 
-/** button-secondary-pill — the "ghost pill" second CTA. */
-export function SecondaryPill({ label, onPress, style, onDark, ...rest }: BtnProps & { onDark?: boolean }) {
+/** button-secondary-pill — the "ghost pill" (blue on light, sky-blue on dark). */
+export function GhostPill({
+  label,
+  onPress,
+  style,
+  onDark,
+  ...rest
+}: BtnProps & { onDark?: boolean }) {
   const { scale, onPressIn, onPressOut } = usePressScale();
   const tint = onDark ? colors.primaryOnDark : colors.primary;
   return (
@@ -79,85 +80,64 @@ export function SecondaryPill({ label, onPress, style, onDark, ...rest }: BtnPro
   );
 }
 
-/** button-store-hero — larger primary CTA, the rare weight-300 label. */
-export function StoreHeroButton({ label, onPress, style, ...rest }: BtnProps) {
-  const { scale, onPressIn, onPressOut } = usePressScale();
-  return (
-    <Animated.View style={{ transform: [{ scale }] }}>
-      <Pressable
-        accessibilityRole="button"
-        onPress={onPress}
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
-        style={[styles.storeHero, style]}
-        {...rest}
-      >
-        <Txt token="buttonLarge" color={colors.canvas}>
-          {label}
-        </Txt>
-      </Pressable>
-    </Animated.View>
-  );
-}
-
-/** button-dark-utility — global-nav actions (Sign In, Bag). */
-export function DarkUtilityButton({ label, onPress, style, ...rest }: BtnProps) {
-  const { scale, onPressIn, onPressOut } = usePressScale();
-  return (
-    <Animated.View style={{ transform: [{ scale }] }}>
-      <Pressable
-        accessibilityRole="button"
-        onPress={onPress}
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
-        style={[styles.darkUtility, style]}
-        {...rest}
-      >
-        <Txt token="buttonUtility" color={colors.bodyOnDark}>
-          {label}
-        </Txt>
-      </Pressable>
-    </Animated.View>
-  );
-}
-
-/** text-link / text-link-on-dark — inline action in Action Blue (or Sky Link Blue on dark). */
+/** text-link / text-link-on-dark — inline action in Action Blue (Sky Link Blue on dark). */
 export function TextLink({
   label,
   onPress,
   onDark,
-  strong,
+  muted,
 }: {
   label: string;
   onPress?: () => void;
   onDark?: boolean;
-  strong?: boolean;
+  muted?: boolean;
 }) {
-  const tint = onDark ? colors.primaryOnDark : colors.primary;
+  const tint = muted
+    ? onDark
+      ? colors.bodyMuted
+      : colors.inkMuted48
+    : onDark
+      ? colors.primaryOnDark
+      : colors.primary;
   return (
-    <Pressable accessibilityRole="link" onPress={onPress} hitSlop={8}>
-      <Txt token={strong ? 'bodyStrong' : 'body'} color={tint}>
+    <Pressable accessibilityRole="link" onPress={onPress} hitSlop={10}>
+      <Txt token="body" color={tint}>
         {label}
       </Txt>
     </Pressable>
   );
 }
 
-/** A pair of CTAs as they appear atop a product tile ("Learn more" / "Buy"). */
-export function CtaPair({
-  onLearn,
-  onBuy,
-  onDark,
+/** button-icon-circular — a quiet 56px control chip, used for session play/pause/end. */
+export function IconButton({
+  name,
+  onPress,
+  color = colors.bodyOnDark,
+  bg = 'rgba(255,255,255,0.10)',
+  size = 56,
+  label,
 }: {
-  onLearn?: () => void;
-  onBuy?: () => void;
-  onDark?: boolean;
+  name: IconName;
+  onPress?: () => void;
+  color?: string;
+  bg?: string;
+  size?: number;
+  label?: string;
 }) {
+  const { scale, onPressIn, onPressOut } = usePressScale();
   return (
-    <View style={styles.ctaRow}>
-      <SecondaryPill label="Learn more" onPress={onLearn} onDark={onDark} />
-      <PrimaryButton label="Buy" onPress={onBuy} />
-    </View>
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        onPress={onPress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        style={[styles.iconBtn, { width: size, height: size, borderRadius: size / 2, backgroundColor: bg }]}
+      >
+        <Icon name={name} size={Math.round(size * 0.4)} color={color} strokeWidth={2} />
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -171,6 +151,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  primaryLarge: {
+    paddingVertical: 15,
+    paddingHorizontal: 36,
+    minHeight: 52,
+  },
   ghost: {
     backgroundColor: 'transparent',
     borderRadius: radius.pill,
@@ -181,28 +166,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  storeHero: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.pill,
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    minHeight: 48,
+  iconBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  darkUtility: {
-    backgroundColor: colors.ink,
-    borderRadius: radius.sm,
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ctaRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
   },
 });

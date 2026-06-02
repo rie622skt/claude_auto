@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "NOVA Watch",
-    "slug": "nova-watch",
+    "name": "Cadence",
+    "slug": "cadence",
     "version": "1.0.0",
     "orientation": "default",
     "icon": "./assets/icon.png",
