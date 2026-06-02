@@ -1,0 +1,11 @@
+# Netlify build config. Serves at domain root, so the committed root-relative
+# app.json works as-is (no base path needed).
+[build]
+  command = "npx expo export --platform web"
+  publish = "dist"
+
+# SPA fallback — real files are served first; anything unmatched returns index.html.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
